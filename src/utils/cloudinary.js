@@ -1,4 +1,5 @@
 import { v2 as cloudinary } from "cloudinary";
+import { log } from "console";
 import fs from "fs"
 
 
@@ -16,8 +17,10 @@ const uploadOnCloudinary = async (localFilePath) => {
        const response = await cloudinary.uploader.upload(localFilePath,{
             resource_type: "auto"
         })
+        // console.log("response from cloudinary" , response);
         //file uploaded successfully
-        console.log(("File is uploaded on cloudinary " , response.url));
+        // console.log(("File is uploaded on cloudinary " , response.url));
+        fs.unlinkSync(localFilePath)
         return response
     }
     catch(err){
@@ -28,7 +31,7 @@ const uploadOnCloudinary = async (localFilePath) => {
     }
 }
 
-
+export   {uploadOnCloudinary};
 // cloudinary.uploader.upload(
 //   "https://upload.wikimedia.org/wikipedia/commons/a/ae/Olympic_flag.jpg",
 //   { public_id: "olympic_flag" },
