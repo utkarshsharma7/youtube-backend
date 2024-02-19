@@ -4,7 +4,7 @@ import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2";
 import bcrypt from "bcrypt"
 
 
-const videSchema = new Schema({
+const videoSchema = new Schema({
     videoFile: {
         type: String, // cloudinary
         required: true
@@ -57,4 +57,4 @@ const videSchema = new Schema({
 // }
 // videoSchema.plugin(mongooseAggregatePaginate)
 
-export const Video = mongoose.model("Video", videSchema)
+export const Video = mongoose.model("Video", videoSchema)
