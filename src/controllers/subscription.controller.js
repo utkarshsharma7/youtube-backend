@@ -60,11 +60,63 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
     if (!channelId || !isValidObjectId(channelId)) {
       throw new ApiError(400, 'Invalid Channel ID')
     }
-    const subscribers = await Subscription.findById(channelId)
+    const subscribers = await Subscription.aggregate([
+      {
+        $match: {
+          channel: new mongoose.Types.ObjectId(channelId),
+        },
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "subscriber",
+          foreignField: "_id",
+          as: "subscribers",
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          channel: 1,
+          subscriber: 1,
+          createdAt: 1,
+          updatedAt: 1,
+          subscribers: {
+            $arrayElemAt: ["$subscribers", 0],
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          subscriber: 1,
+          channel: 1,
+          subscribers: {
+            username: 1,
+            avatar: 1,
+          },
+          createdAt: 1,
+          updatedAt: 1,
+        },
+      },
+    ]);
 
-    return res
-    .status(200)
-    .json(new ApiResponse(200, subscribers, "Subscriber count fetched successfully"))
+
+
+if (!subscribers) {
+  throw new ApiError(404, "The channel does not exist");
+}
+
+return res.status(200).json(
+  new ApiResponse(
+    200,
+    {
+      numOfSubscribers: subscribers.length,
+      subscribers,
+    },
+    "Creating a function to get a channel's subscriber"
+  )
+);
 })
 
 // controller to return channel list to which user has subscribed
