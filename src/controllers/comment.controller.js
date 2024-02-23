@@ -49,9 +49,10 @@ const addComment = asyncHandler(async (req, res) => {
   let { content } = req.body; // Declare content variable
 
   // Check if content is not provided or it's an object
-  if (!content || typeof content !== "string") {
-    throw new ApiError(400, "Content must be a string and is required");
+  if (!content) {
+    throw new ApiError(400, "content is required");
   }
+
 
   const video = await Video.findById(videoId);
 
