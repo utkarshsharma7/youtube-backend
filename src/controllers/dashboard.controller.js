@@ -12,112 +12,139 @@ const getChannelStats = asyncHandler(async (req, res) => {
 
     if(!isValidObjectId(userId)) throw new ApiError("User not found or you are not logged in", 401);
 
-    const subscribers = await Subscription.aggregate([
-        {
-            $match: {
-                subscriber : user._id,
-            },
-        },
-        {
-            $count : "subscribers",
-        },
-
-    ]);
-
-    const videos = await Video.aggregate([
+    const totalSubscribers = await Subscription.aggregate([
       {
         $match: {
-            owner : user._id
+          channel: new mongoose.Types.ObjectId(userId),
+        },
+      },
+      {
+        $group: {
+          _id : null,
+          subscribersCount : {
+            $sum: 1
+          }
+        },
+      },
+    ]);
+
+    const video = await Video.aggregate([
+      {
+        $match: {
+          owner: new mongoose.Types.ObjectId(userId),
+        },
+      },
+      {
+        $lookup: {
+          from : "likes",
+          localField : "_id",
+          foreignField: "video",
+          as: "likes"
+        },
+      },
+      {
+        $project: {
+          totalLikes : {
+            $size: "$likes"
+          },
+          totalViews : "$views",
+          totalVideos: 1
         }
       },
       {
-        $count : "videos",
+        $group : {
+          _id : null,
+          totalLikes : {
+            $sum : "$totalLikes"
+          },
+          totalViews : {
+            $sum : "$totalViews"
+          },
+          totalVideos: {
+            $sum : 1
+          }
+        }
       }
     ]);
-    const likes = await Like.aggregate([
-        {
-            $match : {
-                owner : user._id
-            },
-        },
-        {
-            $count : "likes"
-        }
-    ])
 
-    const views  = await Video.aggregate([
-        {
-            $match: {owner : user._id}
-        },
-        {
-            $group : {
-                _id : null,
-                totalViews : {
-                    $sum : "$views"
-                }
-            }
-        },
-        {
-            $project: {
-            _id : 0,
-            totalViews: 1,
-        }}
-    ])
 
-    if(!subscribers){
-        throw new ApiError(500, "Something went wrong while fetching subscriber count")
-    }
-    if (!videos) {
-      throw new ApiError(
-        500,
-        "Something went wrong while fetching videos count"
-      );
-    }
-    if (!likes) {
-      throw new ApiError(
-        500,
-        "Something went wrong while fetching likes count"
-      );
-    }
-    if (!views) {
-      throw new ApiError(
-        500,
-        "Something went wrong while fetching views count"
-      );
-    }
-    return res.status(200).json(
-      new ApiResponse(
-        200,
-        {
-          subscribers: subscribers[0].subscribers,
-          videos: videos[0].videos,
-          likes: likes[0].likes,
-          totalViews: views[0].totalViews,
-        },
-        "Successfuly fetched the channel statistics"
-      )
-    );
+
+
+     const channelStats = {
+       totalSubscribers: totalSubscribers[0]?.subscribersCount || 0,
+       totalLikes: video[0]?.totalLikes || 0,
+       totalViews: video[0]?.totalViews || 0,
+       totalVideos: video[0]?.totalVideos || 0,
+     };
+
+     return res
+       .status(200)
+       .json(
+         new ApiResponse(
+           200,
+           channelStats,
+           "channel stats fetched successfully"
+         )
+       );
     
 })
 
 const getChannelVideos = asyncHandler(async (req, res) => {
     // TODO: Get all the videos uploaded by the channel
     const userId = req.user?._id;
-    if(!isValidObjectId(userId)){
-        throw new ApiError(401, 'User not authenticated')
-    }
-    if(userId !== req.params.channelID){
-        throw new ApiError(401, "Unauthorized Access");
-    }
-    const videos = await Video.find({
-        owner : user._id
-    })
-    if(!video){
-        throw new ApiError(401, "No videos on this channel or error fetching videos")
-    }
-    return res
-      .status(200)
-      .json(new ApiResponse(200, videos, "Fetched all videos successfuly"));
+   
+    const videos = await Video.aggregate([
+      {
+        $match: {
+          owner: new mongoose.Types.ObjectId(userId),
+        },
+      },
+      {
+        $lookup: {
+          from: "likes",
+          localField: "_id",
+          foreignField: "video",
+          as: "likes",
+        },
+      },
+     
+       {
+            $addFields: {
+                createdAt: {
+                    $dateToParts: { date: "$createdAt" },
+                },
+                likesCount: {
+                    $size: "$likes"
+                },
+            },
+        },
+      {
+        $sort: {
+          createdAt: -1,
+        },
+      },
+      {
+        $project: {
+          _id: 1,
+          "videoFile.url": 1,
+          "thumbnail.url": 1,
+          title: 1,
+          description: 1,
+          createdAt: {
+            year: 1,
+            month: 1,
+            day: 1,
+          },
+          isPublished: 1,
+          likesCount: 1,
+        },
+      },
+    ]);
+   return res
+        .status(200)
+        .json(
+          new ApiResponse(200, videos, "channel stats fetched successfully")
+        );
 
 })
 
