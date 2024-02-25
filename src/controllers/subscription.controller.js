@@ -122,7 +122,9 @@ return res.status(200).json(
 // controller to return channel list to which user has subscribed
 const getSubscribedChannels = asyncHandler(async (req, res) => {
     const { subscriberId } = req.params
-    if(!subscriberId || !isValidObjectId(subscriberId)){
+
+
+    if(!isValidObjectId(subscriberId)){
         throw new ApiError(400, "Invalid subscriber Id")
     }
     const  subscribedChannels = await Subscription.find({subscriber: subscriberId}, 'channel').sort('-createdAt');
