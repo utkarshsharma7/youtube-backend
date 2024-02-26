@@ -12,63 +12,63 @@ and also combines the tweet functionality from twitter into it. Find more about 
 | API Documentation  | [click here](https://documenter.getpostman.com/view/23785168/2sA2rDvf7Q)    |
 | Model              | [click here ](https://app.eraser.io/workspace/YtPqZ1VogxGy1jzIDkzj)         |
 
-## Features
+## Functionality Overview
 
 ### User Management:
 
-- Registration, login, logout, password reset
-- Get current User
-- Profile management (avatar, cover image, details)
-- Watch history tracking
+- **Authentication:** Allows users to register, log in, log out, and reset their passwords.
+- **User Profile:** Enables users to manage their profiles, including avatar, cover image, and other details.
+- **Watch History:** Tracks user's watch history for personalized recommendations.
 
 ### Video Management:
 
-- Video upload and publishing
-- Video search, sorting, and pagination
-- Video editing and deletion
-- Visibility control (publish/unpublish)
+- **Upload and Publishing:** Users can upload videos and publish them on the platform.
+- **Search and Sorting:** Facilitates searching, sorting, and pagination of videos for easy access.
+- **Editing and Deletion:** Allows users to edit video details and delete videos when needed.
+- **Visibility Control:** Offers control over the visibility of videos, allowing them to be published or unpublished.
 
 ### Tweet Management:
 
-- Tweet creation and publishing
-- Viewing user tweets
-- Updating and deleting tweets
+- **Tweet Creation:** Enables users to create and publish tweets.
+- **Viewing Tweets:** Provides functionality to view user tweets.
+- **Tweet Modification:** Allows users to update and delete their tweets.
 
 ### Subscription Management:
 
-- Subscribing to channels
-- Viewing subscriber and subscribed channel lists
+- **Channel Subscription:** Users can subscribe to channels of their choice.
+- **Subscriber Management:** Facilitates viewing lists of subscribers and subscribed channels.
 
 ### Playlist Management:
 
-- Creating, updating, and deleting playlists
-- Adding and removing videos from playlists
-- Viewing user playlists
+- **Playlist Operations:** Allows users to create, update, and delete playlists.
+- **Video Playlist:** Enables adding and removing videos from playlists.
+- **Playlist Viewing:** Provides users with the ability to view their playlists.
 
 ### Like Management:
 
-- Liking and unliking videos, comments, and tweets
-- Viewing liked videos
+- **Content Liking:** Allows users to like and unlike videos, comments, and tweets.
+- **Liked Videos:** Offers a view of videos that the user has liked.
 
 ### Comment Management:
 
-- Adding, updating, and deleting comments on videos
+- **Comment Operations:** Enables users to add, update, and delete comments on videos.
 
 ### Dashboard:
 
-- Viewing channel statistics (views, subscribers, videos, likes)
-- Accessing uploaded videos
+- **Analytics:** Users can view channel statistics including views, subscribers, videos, and likes.
+- **Video Access:** Provides access to uploaded videos.
 
 ### Health Check:
 
-- Endpoint to verify the backend's health
+- **Backend Verification:** Includes an endpoint to verify the health of the backend system.
 
 ## Technologies Used
 
-- Node.js 
-- Express.js
-- MongoDB
-- Cloudinary (must have an account)
+- **Node.js:** Backend JavaScript runtime environment.
+- **Express.js:** Web application framework for Node.js.
+- **MongoDB:** NoSQL database for storing application data.
+- **Cloudinary:** External service used for managing media assets (account required).
+
 
 ## Installation and Setup
 
