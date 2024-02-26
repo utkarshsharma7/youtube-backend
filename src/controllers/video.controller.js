@@ -7,79 +7,88 @@ import {asyncHandler} from "../utils/asyncHandler.js"
 import {deleteFromCloudinary, uploadOnCloudinary} from "../utils/cloudinary.js"
 
 const getAllVideos = asyncHandler(async (req, res) => {
-  let {
-    page = 1,
-    limit = 10,
-    query,
-    sortBy = "createdAt",
-    sortType = 1, // Ascending
-    userId,
-  } = req.query;
+  const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query;
+  console.log(userId);
+  const pipeline = [];
 
-  // Converting string to integer
-  page = Number.parseInt(page);
-  limit = Number.parseInt(limit);
-
-  // Validation
-  if (!Number.isFinite(page)) {
-    throw new ApiError(404, "Page number should be an integer");
+  // for using Full Text based search u need to create a search index in mongoDB atlas
+  // you can include field mapppings in search index eg.title, description, as well
+  // Field mappings specify which fields within your documents should be indexed for text search.
+  // this helps in seraching only in title, desc providing faster search results
+  // here the name of search index is 'search-videos'
+  if (query) {
+    pipeline.push({
+      $search: {
+        index: "search-videos",
+        text: {
+          query: query,
+          path: ["title", "description"], //search only on title, desc
+        },
+      },
+    });
   }
 
-  if (!Number.isFinite(limit)) {
-    throw new ApiError(404, "Video limit should be an integer");
+  if (userId) {
+    if (!isValidObjectId(userId)) {
+      throw new ApiError(400, "Invalid userId");
+    }
+
+    pipeline.push({
+      $match: {
+        owner: new mongoose.Types.ObjectId(userId),
+      },
+    });
   }
 
-  // Getting user
-  const user = await User.findOne({
-    refreshToken: req.cookies.refreshToken,
-  });
+  // fetch videos only that are set isPublished as true
+  pipeline.push({ $match: { isPublished: true } });
 
-  if (!user) {
-    throw new ApiError(404, "User not found");
-  }
-
-  // Build the aggregation pipeline
-  let aggregationPipeline = [
-    {
-      $match: { owner: user._id },
-    },
-    {
+  //sortBy can be views, createdAt, duration
+  //sortType can be ascending(-1) or descending(1)
+  if (sortBy && sortType) {
+    pipeline.push({
       $sort: {
-        [sortBy]: sortType,
+        [sortBy]: sortType === "asc" ? 1 : -1,
+      },
+    });
+  } else {
+    pipeline.push({ $sort: { createdAt: -1 } });
+  }
+
+  pipeline.push(
+    {
+      $lookup: {
+        from: "users",
+        localField: "owner",
+        foreignField: "_id",
+        as: "ownerDetails",
+        pipeline: [
+          {
+            $project: {
+              username: 1,
+              "avatar.url": 1,
+            },
+          },
+        ],
       },
     },
-  ];
-
-  // Add query-based filtering if a query is provided
-  if (query && query.trim()) {
-    aggregationPipeline[0].$match.title = {
-      $regex: query.trim(),
-      $options: "i",
-    };
-  }
-
-  // Execute the aggregation pipeline
-  const allVideos = await Video.aggregate(aggregationPipeline);
-
-  if(!allVideos){
-    throw new ApiError(404, "There are no videos to fetch")
-  }
-  // Paginate the results
-  const videos = allVideos.slice((page - 1) * limit, page * limit);
-  
-  if (!videos) {
-    throw new ApiError(404, "There are no videos to fetch");
-  }
-  return res.status(200).json(
-    new ApiResponse(
-      200,
-      {
-        numOfVideos: videos.length,
-        videos,
-      },
-      "Fetched all videos"
-    )
+    {
+      $unwind: "$ownerDetails",
+    }
   );
+
+  const videoAggregate = Video.aggregate(pipeline);
+
+  const options = {
+    page: parseInt(page, 10),
+    limit: parseInt(limit, 10),
+  };
+
+  const video = await Video.aggregatePaginate(videoAggregate, options);
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, video, "Videos fetched successfully"));
 });
 
 const publishAVideo = asyncHandler(async (req, res) => {
@@ -177,8 +186,11 @@ const updateVideo = asyncHandler(async (req, res) => {
   // 2. find the existing video using its ID
   const oldVideo = await Video.findById(videoId);
 
+  if(!oldVideo){
+    throw new ApiError(404, "No video found")
+  }
   // 3. If user does not own the video, send error response
-  if (String(oldVideo.owner) !== String(req.user?._id)) {
+  if (oldVideo.owner.toString() !== req.user?._id.toString()) {
     throw new ApiError(401, "You is not authorized to perform this action");
   }
 
@@ -265,7 +277,13 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
 
     await video.save({validateBeforeSave: false})
 
-    return res.status(200).json(new ApiResponse(200, video, "Publish status has been updated successfully."))
+    if(video.isPublished){
+      return res.status(200).json(new ApiResponse(200, video, "The video has been published."))
+    }else{
+      return res.status(200).json(new ApiResponse(200, video, "The video has been Unpublished."))
+    }
+
+    
 })
 
 export {
